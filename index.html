@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      * {
+        border-radius: 10%;
+      }
+      main {
+        text-align: center;
+      }
+      section {
+        margin-bottom: 50px;
+      }
+      b {
+        font-size: 200%;
+      }
+      li {
+        font-size: 150%;
+        padding-left: 10px; /* リストアイテムにパディングを追加 */
+      }
+      #videoList {
+        text-align: left; /* リスト全体を左揃えに */
+        margin-left: 0; /* 左のマージンを削除 */
+      }
+      #window {
+        display: flex;
+        align-items: center; /* Center items vertically */
+      }
+      .txt {
+        display: flex; /* Make the .txt container a flex container */
+        align-items: center; /* Center text vertically */
+        height: 100%; /* Allow it to take full height of the #window */
+      }
+      #windowText {
+        bottom: 0;
+        padding: 50px 0;
+        font-size: 150%;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section id="icon-wrapper">
+        <span id="player_btn">
+          <button onclick="music()">
+            <img src="image/player_icon.png" alt="playerIcon" width="60px" />
+          </button>
+        </span>
+
+        <span id="list_btn">
+          <button onclick="list()">
+            <img src="image/list_icon.png" alt="listIcon" width="60px" />
+          </button>
+        </span>
+
+        <span id="search_btn">
+          <button onclick="search()">
+            <img src="image/search_icon.png" alt="searchIcon" width="60px" />
+          </button>
+        </span>
+      </section>
+
+      <section id="player-wrapper">
+        <div class="jacket_wrapper">
+          <b id="videoTitle">タイトル</b>
+          <p id="artist">アーティスト</p>
+
+          <div>
+            <img id="videoImg" src="" alt="サムネイル" width="350" />
+          </div>
+        </div>
+
+        <div class="control">
+          <br />
+
+          <span id="leftBtn">
+            <button onclick="prevVideo()">
+              <img src="image/leftBtn.png" alt="戻る" width="80px" />
+            </button>
+          </span>
+
+          <span id="playBtn">
+            <button onclick="playVideo()">
+              <img src="image/playBtn.png" alt="プレイ" width="80px" />
+            </button>
+          </span>
+
+          <span id="stopBtn" style="display: none">
+            <button onclick="pauseVideo()">
+              <img src="image/stopBtn.png" alt="ストップ" width="80px" />
+            </button>
+          </span>
+
+          <span id="rightBtn">
+            <button onclick="nextVideo()">
+              <img src="image/rightBtn.png" alt="次" width="80px" />
+            </button>
+          </span>
+        </div>
+
+        <iframe
+          id="play_youtube"
+          width="350"
+          height="197"
+          src=""
+          frameborder="0"
+          allow="autoplay"
+          style="visibility: hidden"
+          allowfullscreen
+        ></iframe>
+      </section>
+
+      <section id="list-wrapper" style="display: none">
+        <ol id="videoList"></ol>
+
+        <div id="window">
+          <div><img id="windowImg" src="" alt="" width="150px" /></div>
+          <div class="txt">
+            <span id="windowText">タイトル - アーティスト</span>
+          </div>
+          <div id="control">
+            <span id="controlPlayBtn">
+              <button onclick="playVideo()">
+                <img src="image/playBtn.png" alt="プレイ" width="40px" />
+              </button>
+            </span>
+
+            <span id="controlStopBtn" style="display: none">
+              <button onclick="pauseVideo()">
+                <img src="image/stopBtn.png" alt="ストップ" width="40px" />
+              </button>
+            </span>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      let Lists = [
+        // [url_id, title, artist],
+        ["-NKskiXVr5E", "無知", "むㇳ"],
+        ["r105CzDvoo0", "Anytime Anywhere", "milet"],
+        ["n1K5BDHnr7c", "青春コンプレックス", "結束バンド"],
+        ["AOfaWrBwo7I", "ひゅるりらぱっぱ", "tuki."],
+        ["ZhUa0CumyxQ", "ホムンクルス", "Vaundy"],
+        ["UM9XNpgrqVk", "怪獣の花唄", "Vaundy"],
+        ["AIMjbleH394", "us", "milet"],
+        ["pHLC_uhnrxk", "inside you", "milet"],
+        ["phsDrsw-tzc", "T.B.H", "QWER"],
+        ["2By3feOVw20", "麻痺", "yama"],
+        ["5v3NG15-OZ8", "ワタシダケユウレイ", "SICK HACK"],
+        ["6c03FX-eWjg", "フェイキング・オブ・コメディ", "Ado"],
+        ["j7CDb610Bg0", "天体観測", "BUMP OF CHICKEN"],
+        ["aVt90Q2o-Zw", "螺旋", "Ado"],
+        ["-yl6v5ezpuo", "シカバネーゼ", "Ado"],
+      ];
+
+      let videoImg = document.getElementById("videoImg");
+      let playBtn = document.getElementById("playBtn");
+      let stopBtn = document.getElementById("stopBtn");
+      let controlPlayBtn = document.getElementById("controlPlayBtn");
+      let controlStopBtn = document.getElementById("controlStopBtn");
+
+      let videoTitle = document.getElementById("videoTitle");
+      let artist = document.getElementById("artist");
+
+      let play_num = 0; // 初期動画のインデックス
+      let bool = false;
+
+      const frame = document.getElementById("play_youtube");
+
+      updateVideo(); // 最初の動画情報を設定
+      populateVideoList(); // 動画リストを作成
+
+      function populateVideoList() {
+        const videoList = document.getElementById("videoList");
+        Lists.forEach((video, index) => {
+          const listItem = document.createElement("li");
+          listItem.textContent = `${video[1]} - ${video[2]}`; // タイトル - アーティスト
+          listItem.onclick = () => {
+            play_num = index; // インデックスを更新
+            updateVideo(); // 動画情報を更新
+            music(); // プレイヤーを表示
+            if (bool) playVideo(); // 再生中なら再生
+          };
+          videoList.appendChild(listItem); // リストに追加
+        });
+      }
+
+      function updateVideo() {
+        // 動画情報を更新する関数
+        const frameUrl =
+          "https://www.youtube.com/embed/" +
+          Lists[play_num][0] +
+          "?enablejsapi=1";
+        frame.src = frameUrl; // iframeのsrcを更新
+        let Img =
+          "https://img.youtube.com/vi/" +
+          Lists[play_num][0] +
+          "/maxresdefault.jpg"; // サムネイルを更新
+        videoImg.src = Img;
+        document.getElementById("windowImg").src = Img;
+        document.getElementById("windowText").textContent =
+          Lists[play_num][1] + " - " + Lists[play_num][2];
+
+        videoTitle.textContent = Lists[play_num][1]; // タイトルを更新
+        artist.textContent = Lists[play_num][2]; // アーティストを更新
+        bool = false; // 動画情報を更新したときに再生状態をリセット
+        stopBtn.style.display = "none"; // 停止ボタンを非表示
+        playBtn.style.display = "inline"; // 再生ボタンを表示
+        frame.style.visibility = "hidden"; // iframeを表示
+      }
+
+      function playVideo() {
+        if (!bool) {
+          const iframe = document.getElementById("play_youtube");
+          iframe.contentWindow.postMessage(
+            '{"event":"command","func":"playVideo","args":""}',
+            "*"
+          );
+          bool = true;
+          if (document.getElementById("list-wrapper").style.display == "none") {
+            playBtn.style.display = "none";
+            stopBtn.style.display = "inline";
+          } else {
+            controlPlayBtn.style.display = "none";
+            controlStopBtn.style.display = "inline";
+          }
+        }
+      }
+
+      function pauseVideo() {
+        if (bool) {
+          const iframe = document.getElementById("play_youtube");
+          iframe.contentWindow.postMessage(
+            '{"event":"command","func":"pauseVideo","args":""}',
+            "*"
+          );
+          bool = false;
+          if (document.getElementById("list-wrapper").style.display == "none") {
+            playBtn.style.display = "inline";
+            stopBtn.style.display = "none";
+          } else {
+            controlPlayBtn.style.display = "inline";
+            controlStopBtn.style.display = "none";
+          }
+        }
+      }
+
+      function nextVideo() {
+        // 次の動画に切り替える関数
+        play_num = (play_num + 1) % Lists.length; // 最後の動画の次は最初の動画
+        updateVideo(); // 動画情報を更新
+        if (bool) playVideo(); // 再生中なら再生
+      }
+
+      function prevVideo() {
+        // 前の動画に切り替える関数
+        play_num = (play_num - 1 + Lists.length) % Lists.length; // 最初の動画の前は最後の動画
+        updateVideo(); // 動画情報を更新
+        if (bool) playVideo(); // 再生中なら再生
+      }
+
+      function music() {
+        document.getElementById("list-wrapper").style.display = "none"; // リストを非表示
+        document.getElementById("player-wrapper").style.display = "block"; // プレイヤーを表示
+
+        if (bool) {
+          playBtn.style.display = "none";
+          stopBtn.style.display = "inline";
+        } else {
+          playBtn.style.display = "inline";
+          stopBtn.style.display = "none";
+        }
+      }
+
+      function list() {
+        document.getElementById("list-wrapper").style.display = "block"; // IDを修正
+        document.getElementById("player-wrapper").style.display = "none"; // プレイヤーを非表示
+
+        if (bool) {
+          controlPlayBtn.style.display = "none";
+          controlStopBtn.style.display = "inline";
+        } else {
+          controlPlayBtn.style.display = "inline";
+          controlStopBtn.style.display = "none";
+        }
+      }
+    </script>
+  </body>
+</html>
